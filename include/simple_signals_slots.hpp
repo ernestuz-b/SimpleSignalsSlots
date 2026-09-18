@@ -639,7 +639,7 @@ public:
     template <class T, class Method>
         requires std::derived_from<T, Object> &&
                  std::invocable<Method, T&, std::add_lvalue_reference_t<Args>...>
-    std::uint64_t add(const SlotRef<T, Method>& endpoint) {
+    void add(const SlotRef<T, Method>& endpoint) {
         auto state = state_;
         Connection connection;
         connection.id = detail::next_connection_id();
@@ -682,7 +682,6 @@ public:
               DisconnectReason::explicit_remove,
               multiplicity);
 
-        return connection_id;
     }
 
     template <class T, class Method>
