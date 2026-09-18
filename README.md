@@ -32,6 +32,34 @@ actor.hit(10, Damage::Fire);
 
 `Signal<Args...>` has no return type: a signal is multicast and returns nothing. Slots remain ordinary member functions. `slot(object, &Type::method)` is only the small binding expression C++ still requires for a bound member function.
 
+## Static topology
+
+Stable wiring can be declared as part of the object's type rather than executed as constructor bookkeeping:
+
+```cpp
+struct Actor : sss::Object {
+    Enemy enemy;
+    UI ui;
+
+    sss::Signal<int, Damage> hit{*this, "hit"};
+
+    inline static constexpr auto static_connections = sss::static_connections(
+        sss::connect(&Actor::hit, &Actor::enemy, &Enemy::damage),
+        sss::connect(&Actor::hit, &Actor::ui,    &UI::show_damage)
+    );
+};
+
+static_assert(Actor::static_connections.count<&Actor::hit>() == 2);
+```
+
+These are compile-time connection descriptors, not runtime connection records. The compiler knows the number and declaration order of static edges. Emission invokes them directly in the order written, then invokes any runtime `+=` connections in their insertion order.
+
+Static wiring is immutable. Runtime `-=`, `remove_one()`, and `remove_all()` operate only on dynamic connections, while `connected()`, `connection_count()`, and `size()` report the combined static + dynamic topology. `dynamic_size()` reports only the runtime tail.
+
+In version 1, the signal and target of a static connection are direct members of the same owning object. This is intentional: static wiring describes stable object structure. Connections to objects discovered at runtime remain ordinary dynamic `+=` connections.
+
+With `SIMPLE_SIGNALS_DISABLE_TRACE`, a static-only object performs no library heap allocation: the static edges exist only as constexpr descriptors, signal registration uses an intrusive list, and the dynamic containers remain empty until a dynamic connection is actually added.
+
 ## Connections and lifetime
 
 Connections are synchronous and ordered. `+=` always adds one connection, including an intentional duplicate. `-=` removes the most recently added matching connection.
@@ -47,7 +75,7 @@ actor.hit -= sss::slot(enemy, &Enemy::damage); // one remains
 actor.hit.remove_all(sss::slot(enemy, &Enemy::damage));
 ```
 
-Every participating object derives from `sss::Object`. Detailed connections live only at the signal owner. Objects maintain only a coarse list of other objects to which they are currently connected, with a reference count per object pair. That object-level graph is used for automatic destruction cleanup and reverse inspection.
+Every participating object derives from `sss::Object`. Detailed **dynamic** connections live only at the signal owner. Objects maintain only a coarse list of other objects to which they are dynamically connected, with a reference count per object pair. That object-level graph is used for automatic destruction cleanup. Static edges need no runtime lifetime bookkeeping because source and target are members of the same owning object.
 
 Destroying either side therefore removes live connections automatically. Signal connections do **not** impose ownership and do not require `shared_ptr`/`weak_ptr`.
 
@@ -108,7 +136,7 @@ The inspector reports the first line. This is documented rather than hidden behi
 
 ## Emission semantics
 
-Emission is synchronous and sequential in connection order. Disconnecting a slot during an emission prevents it from running later in that same emission. A connection added during an emission is first considered by the next outer emission. A nested emission sees the topology as it exists when the nested emission begins.
+Emission is synchronous and sequential: static connections first in declaration order, then dynamic connections in `+=` order. Disconnecting a slot during an emission prevents it from running later in that same emission. A connection added during an emission is first considered by the next outer emission. A nested emission sees the topology as it exists when the nested emission begins.
 
 Exceptions thrown by a slot propagate to the emitter; internal emission bookkeeping is still restored.
 
@@ -130,6 +158,6 @@ The library itself is header-only: include `include/simple_signals_slots.hpp` an
 
 Define `SIMPLE_SIGNALS_DISABLE_TRACE` for a zero-diagnostics build. In that configuration the public signal/slot syntax and lifetime behaviour are unchanged, but the compiler takes a stripped implementation path: `Inspector`, trace records, debug names, source locations, diagnostic IDs, and their associated headers/storage are absent. The optional string literals in `Object("name")` and `Signal{*this, "name"}` are accepted for source compatibility and ignored.
 
-The stripped configuration is built as a separate test target so it cannot silently rot. Exact signal operations such as `connected()`, `connection_count()`, duplicate handling, emission, and automatic destruction cleanup remain part of the core and are still available.
+The stripped configuration is built as a separate test target so it cannot silently rot. Exact signal operations such as `connected()`, `connection_count()`, duplicate handling, emission, and automatic destruction cleanup remain part of the core and are still available. A dedicated allocation-counting test also verifies that stripped static-only wiring performs no library heap allocation.
 
 See [`SPEC.md`](SPEC.md) for the precise behavioural contract.

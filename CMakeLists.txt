@@ -20,6 +20,14 @@ if(SIMPLE_SIGNALS_BUILD_TESTS)
     target_link_libraries(simple_signals_stripped_tests PRIVATE simple_signals_slots)
     target_compile_definitions(simple_signals_stripped_tests PRIVATE SIMPLE_SIGNALS_DISABLE_TRACE)
     add_test(NAME simple_signals_stripped_tests COMMAND simple_signals_stripped_tests)
+
+    add_executable(simple_signals_static_tests tests/test_static.cpp)
+    target_link_libraries(simple_signals_static_tests PRIVATE simple_signals_slots)
+    add_test(NAME simple_signals_static_tests COMMAND simple_signals_static_tests)
+
+    add_executable(simple_signals_static_noalloc_tests tests/test_static_noalloc.cpp)
+    target_link_libraries(simple_signals_static_noalloc_tests PRIVATE simple_signals_slots)
+    add_test(NAME simple_signals_static_noalloc_tests COMMAND simple_signals_static_noalloc_tests)
 endif()
 
 if(SIMPLE_SIGNALS_BUILD_EXAMPLES)
