@@ -51,7 +51,9 @@ The compiler checks that the selected member function can be invoked using the s
 
 ### Connection
 
-Each `+=` creates one independent connection with a unique numeric connection ID. Two connections may point from the same signal to the same slot.
+Each `+=` creates one independent connection. Two connections may point from the same signal to the same slot.
+
+When diagnostics are enabled, the spy assigns an internal numeric ID to each connection so duplicate edges can be distinguished in traces. That ID is diagnostic-only and is not part of the core connection API or stored in the stripped build.
 
 Detailed connection records are stored only by the signal. Reverse lifetime tracking is object-granular, not connection-granular.
 
@@ -67,7 +69,7 @@ these operations are defined:
 
 ```cpp
 signal += endpoint;                 // add one connection
-signal.add(endpoint);               // add one and return its connection ID
+signal.add(endpoint);               // named equivalent of +=
 signal.add_unique(endpoint);        // add only when no identical connection exists
 
 signal -= endpoint;                 // remove one: most recently added matching connection
@@ -152,7 +154,9 @@ spy.deactivate();
 
 Destroying an active inspector automatically deactivates it.
 
-Tracing can be compiled out with `SIMPLE_SIGNALS_DISABLE_TRACE`. This removes trace submission but does not remove topology metadata required by lifetime safety and queries.
+Tracing and inspection can be compiled out with `SIMPLE_SIGNALS_DISABLE_TRACE`. This is a hard compile-time cut, not merely a runtime disable: the compiler selects the stripped core implementation and does not include or store `Inspector`, trace records, debug names, source locations, signal/object/connection diagnostic IDs, or their ancillary standard-library machinery. The `Object("name")` and `Signal{*this, "name"}` spellings remain accepted so application source does not need conditional compilation; those labels are ignored in the stripped build.
+
+Lifetime safety does not depend on diagnostic metadata. The coarse peer-object graph, signal-owned connection records, exact slot matching, duplicate counts, and automatic destruction cleanup remain present because they are core semantics.
 
 ### Trace kinds
 
