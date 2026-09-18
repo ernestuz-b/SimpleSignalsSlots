@@ -128,6 +128,8 @@ ctest --test-dir build --output-on-failure
 
 The library itself is header-only: include `include/simple_signals_slots.hpp` and compile as C++20 or newer.
 
-Define `SIMPLE_SIGNALS_DISABLE_TRACE` to compile out trace submission. Live topology and lifetime bookkeeping remain available because they are part of the signal mechanism rather than the logger.
+Define `SIMPLE_SIGNALS_DISABLE_TRACE` for a zero-diagnostics build. In that configuration the public signal/slot syntax and lifetime behaviour are unchanged, but the compiler takes a stripped implementation path: `Inspector`, trace records, debug names, source locations, diagnostic IDs, and their associated headers/storage are absent. The optional string literals in `Object("name")` and `Signal{*this, "name"}` are accepted for source compatibility and ignored.
+
+The stripped configuration is built as a separate test target so it cannot silently rot. Exact signal operations such as `connected()`, `connection_count()`, duplicate handling, emission, and automatic destruction cleanup remain part of the core and are still available.
 
 See [`SPEC.md`](SPEC.md) for the precise behavioural contract.
