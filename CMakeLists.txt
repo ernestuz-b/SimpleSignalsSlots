@@ -15,6 +15,11 @@ if(SIMPLE_SIGNALS_BUILD_TESTS)
     add_executable(simple_signals_tests tests/test_signals.cpp)
     target_link_libraries(simple_signals_tests PRIVATE simple_signals_slots)
     add_test(NAME simple_signals_tests COMMAND simple_signals_tests)
+
+    add_executable(simple_signals_stripped_tests tests/test_stripped.cpp)
+    target_link_libraries(simple_signals_stripped_tests PRIVATE simple_signals_slots)
+    target_compile_definitions(simple_signals_stripped_tests PRIVATE SIMPLE_SIGNALS_DISABLE_TRACE)
+    add_test(NAME simple_signals_stripped_tests COMMAND simple_signals_stripped_tests)
 endif()
 
 if(SIMPLE_SIGNALS_BUILD_EXAMPLES)
