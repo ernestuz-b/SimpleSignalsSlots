@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -272,12 +271,10 @@ public:
         return *this;
     }
 
-    // Connection IDs are diagnostic-only. The stripped build preserves the
-    // source-compatible return type but returns 0 and stores no ID per edge.
     template <class T, class Method>
         requires std::derived_from<T, Object> &&
                  std::invocable<Method, T&, std::add_lvalue_reference_t<Args>...>
-    std::uint64_t add(const SlotRef<T, Method>& endpoint) {
+    void add(const SlotRef<T, Method>& endpoint) {
         auto state = state_;
         Connection connection;
         connection.target = &endpoint.object();
@@ -300,7 +297,6 @@ public:
             throw;
         }
         ++state->active_count;
-        return 0;
     }
 
     template <class T, class Method>
