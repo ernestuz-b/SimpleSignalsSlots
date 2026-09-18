@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef SIMPLE_SIGNALS_DISABLE_TRACE
+#include "simple_signals_slots_stripped.hpp"
+#else
+
 #include <algorithm>
 #include <concepts>
 #include <cstdint>
@@ -1001,3 +1005,5 @@ std::vector<SignalMatch> Inspector::signals_for(const SlotRef<T, Method>& endpoi
 }
 
 } // namespace sss
+
+#endif // SIMPLE_SIGNALS_DISABLE_TRACE
